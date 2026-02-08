@@ -25,16 +25,6 @@ noncomputable section
 * Link to Mathematics in Lean:
   https://leanprover-community.github.io/mathematics_in_lean/
 -/
-
-
-
-
-
-
-
-
-
-
 /-
 # Example
 
@@ -75,32 +65,23 @@ lemma first_proof (f : ℝ → ℝ) (u : ℕ → ℝ) (x₀ : ℝ)
   -- Since `f` is continuous, we can pick a `δ > 0` such that
   -- for all `x`, `|x - x₀| < δ → |f(x) - f(x₀)| < ε`.
   unfold ContinuousAtPoint at f_cont
-  obtain ⟨δ, hδ, f_prop⟩ := f_cont ε (by assumption)
+  -- We want to invokke f_cont with eps and by assumptuon
+  obtain ⟨δ, hδ, f_prop⟩ := f_cont ε (by exact hε )
+  -- obtain ⟨δ, hδ, f_prop⟩ := f_cont ε (by assumption) -- also works if we don't want to remember hε 
   -- Since `u` converges to `x₀`, we can pick a `N` such that
   -- for all `n ≥ N`, `|u_n - x₀| < δ`.
+  unfold SequenceHasLimit at u_lim 
   obtain ⟨N, u_prop⟩ := u_lim δ hδ
   -- We pick this `N` to show that `f ∘ u` has limit `f(x₀)`.
   use N
   -- If `n ≥ N` we have `|u_n - x₀| < δ`,
-  intro n hn
-  specialize u_prop n hn
+  intro m hn
+  specialize u_prop m hn
   -- hence `|f(u_n) - f(x₀)| < ε`.
-  specialize f_prop (u n) u_prop
+  specialize f_prop (u m) u_prop
   -- This finishes the proof.
-  assumption
+  exact f_prop  
   }
-
-
-
-
-
-
-
-
-
-
-
-
 
 /-!
 # How does Lean help you?
@@ -124,14 +105,6 @@ There is currently a lot of momentum in formalized mathematics, especially Lean:
 
 Lean exists since 2013, and its mathematical library Mathlib since 2017.
 -/
-
-
-
-
-
-
-
-
 
 /- Lean is a calculator and programming language -/
 #eval 2 + 3
@@ -236,9 +209,6 @@ def Statement2 : Prop :=
 def Statement3 : Prop :=
   ∀ n : ℕ, ∃ p ≥ n, Prime p ∧ Prime (p + 2)
 
-
-
-
 /- Nat.Prime is a predicate on natural numbers, so it has type `ℕ → Prop`. -/
 
 #check Nat.Prime
@@ -250,7 +220,10 @@ def Statement3 : Prop :=
 
 def add_complex_i (y : ℂ) : ℂ := y + Complex.I
 
+-- The (y : ℂ) : ℂ syntax is just syntactic sugar that moves the parameter to the left of the colon. 
+-- If you #check add_complex_i, Lean will report its type as ℂ → ℂ.
 #check add_complex_i
+#check (add_complex_i : ℂ → ℂ)
 
 def less_than_pi (x : ℝ) : Prop := x < π
 
@@ -272,8 +245,6 @@ def differentiable (f : ℝ → ℝ) : Prop :=
 
 #check (differentiable)
 
-
-
 /- If we have a statement `A : Prop`, we can prove `A` using *tactics*. -/
 
 /- `rfl` proves equalities that are equal by definition. -/
@@ -291,5 +262,11 @@ example (a b : ℚ) :
 
 /- `rw` replaces the left-hand side of `h` with its right-hand side in the goal. -/
 example (a b c d : ℝ) (h : a + b = c - d) : 2 * (a + b) = 2 * c - 2 * d := by {
-  rw [h, mul_sub]
+  rw [h]
+  rw [mul_sub]
+  }
+
+example (a b c d : ℝ) (h : a + b = c - d) : 2 * (a + b) = 2 * c - 2 * d := by {
+  rw [h]
+  ring 
   }

@@ -70,13 +70,20 @@ We can do this with the `have` tactic.
 -/
 
 example (p q r : Prop) (hq : p → q) (hr : p → q → r) : p → r := by {
-  sorry
+  intro (hp: p) -- Assume I have p 
+  have h := by apply hq hp -- construct (h: q) by feeding hq hp
+  have h' := by apply hr hp h -- construct (q->r) by feeding hp and then construct h': r by feeding h
+  exact h'
   }
 
 /- We can also use `specialize` to apply a hypothesis to arguments. -/
 example (p q r : Prop) (hq : p → q) (hr : p → q → r) : p → r := by {
-  sorry
-  }
+  intro (hp: p) -- Assume I have p 
+  specialize hq hp -- I get (hq: q) because i give it p 
+  specialize hr hp  -- I get (hr: q-> r) because i get it p
+  specialize hr hq  -- I get (hr: r) because i give it q
+  exact hr 
+}
 
 /-
 **Backwards reasoning** is where we chain implications backwards,
@@ -86,12 +93,34 @@ We do this with the `apply` tactic.
 -/
 
 example (p q r s : Prop) (hq : p → s → q) (hr : q → r) : s → p → r := by {
-  sorry
+   intro (hs:s) (hp:p)
+   -- Exact hr looks for q->r, and apply hq with p and s gives a proof of q
+   -- which applied exactly 
+   apply hr (hq hp hs) -- the apply is implicit in the paranthesis 
   }
+
+-- Here we work backwards
+example (p q r s : Prop) (hpq : p → q) (hqr : q → r) (hrs : r → s) : p → s := by {
+  intro hp
+  -- "To prove s, it suffices to prove r" (refine hrs ?_)
+  refine hrs ?_
+  -- goal: r
+  -- "To prove r, it suffices to prove q" (refine hqr ?_)
+  refine hqr ?_
+  -- goal: q
+  -- "To prove q, it suffices to prove p" (refine hpq ?_)
+  refine hpq ?_
+  -- goal: p
+  exact hp
+}
+
 
 /- We can also use `exact` or `refine` with more complicated proof terms. -/
 example (p q r : Prop) (hq : p → p → q) (hr : q → r) : p → r := by {
-  sorry
+  intro hp 
+  refine hr ?_
+  apply hq hp 
+  exact hp 
   }
 
 
@@ -108,8 +137,15 @@ example (p q r : Prop) (hq : p → p → q) (hr : q → r) : p → r := by {
 variable (f g : ℝ → ℝ)
 #check (Continuous.add : Continuous f → Continuous g → Continuous (fun x ↦ f x + g x))
 
+-- At each line I asked apply?
 example : Continuous (fun x ↦ 2 + x * Real.sin x) := by {
-  sorry
+  -- Get two cases Continous f and 
+  -- Contnous g
+  apply Continuous.add  
+  . exact continuous_const
+  . refine Continuous.mul ?hg.hf ?hg.hg --
+    . exact continuous_id 
+    . exact continuous_sin
   }
 
 
@@ -151,8 +187,12 @@ to the file where the theorem is proven.
 You can often find similar theorems nearby the theorem you searched for.
 -/
 
+#check exp_le_exp.mpr
+
 example (a b x y : ℝ) (h : a < b) (h3 : x ≤ y) : a + exp x < b + exp y := by {
-  sorry
+  calc 
+    a + exp x <  b + exp x := by gcongr
+    _         ≤ b + exp y := by gcongr; -- gcongr figures this out exact exp_le_exp.mpr h3
   }
 
 
@@ -199,12 +239,12 @@ example (h₀ : a = b) (h₁ : b < c) (h₂ : c ≤ d) (h₃ : d < e) : a < e :=
   that follow from linear combinations of assumptions. -/
 
 example (h₀ : a = b) (h₁ : b < c) (h₂ : c ≤ d) (h₃ : d < e) : a < e := by {
-  sorry
+  linarith
   }
 
 example (x y z : ℝ) (hx : x ≤ 3 * y) (h2 : ¬ y > 2 * z)
     (h3 : x ≥ 6 * z) : x = 3 * y := by {
-  sorry
+  linarith
   }
 
 
@@ -215,27 +255,33 @@ example (x y z : ℝ) (hx : x ≤ 3 * y) (h2 : ¬ y > 2 * z)
 #check (mul_le_mul_of_nonneg_right : b ≤ c → 0 ≤ a → b * a ≤ c * a)
 
 example (ha : 0 ≤ a) (hb : 0 ≤ b) (h : 0 ≤ c) : a * (b + 2) ≤ (a + c) * (b + 2) := by {
-  sorry
+  gcongr
+  refine (le_add_iff_nonneg_right a).mpr h
+
   }
 
 /- `gcongr` is very convenient for monotonicity of functions. -/
 
 example (h : a ≤ b) (h2 : b ≤ c) : exp a ≤ exp c := by {
-  sorry
+  gcongr
+  calc a ≤ b := by exact h 
+       _ ≤ c := by exact h2 
   }
 
 example (h : a ≤ b) : c - exp b ≤ c - exp a := by {
-  sorry
+  gcongr
   }
 
 example (ha : 0 ≤ a) (hb : 0 ≤ b) (h : 0 ≤ c) : a * (b + 2) ≤ (a + c) * (b + 2) := by {
-  sorry
+  gcongr
+  refine (le_add_iff_nonneg_right a).mpr h
   }
 
 /- Remark: for equalities, you should use `congr` instead of `gcongr` -/
 
 example (h : a = b) : c - exp b = c - exp a := by {
-  sorry
+  congr
+  rw [<- h] 
   }
 
 
@@ -254,24 +300,30 @@ example (h : a = b) : c - exp b = c - exp a := by {
 #check (exp_le_exp.1 : exp a ≤ exp b → a ≤ b)
 #check (exp_le_exp.2 : a ≤ b → exp a ≤ exp b)
 
+-- I want to prove exp a ≤ exp b and I'm given a ≤ b 
+-- So i apply the second 
 example (h : a ≤ b) : exp a ≤ exp b := by {
-  sorry
+  /- exact exp_le_exp.2 h  -/ -- this also works
+  refine exp_le_exp.2 ?_
+  exact h 
   }
 
 example (h : a ≤ b) : exp a ≤ exp b := by {
-  sorry
+  gcongr 
   }
 
 example (h : exp a ≤ exp b) : a ≤ b := by {
-  sorry
+  apply exp_le_exp.1 h
   }
 
 example (h : exp a ≤ exp b) : a ≤ b := by {
-  sorry
+  apply exp_le_exp.1 h 
   }
 
 example {p q : Prop} (h1 : p → q) (h2 : q → p) : p ↔ q := by {
-  sorry
+  constructor
+  exact h1 
+  exact h2 
   }
 
 /- ## Universal quantification
@@ -280,13 +332,19 @@ The tactics for universal quantification and implication are the same.
 * We can use `apply` or `specialize` to use a hypothesis
   that is a universal quantification (or implication). -/
 
-
+-- No collisions in the image
 def Injective (f : ℝ → ℝ) : Prop := ∀ x y : ℝ, f x = f y → x = y
-
 
 example (f g : ℝ → ℝ) (hg : Injective g) (hf : Injective f) :
     Injective (g ∘ f) := by {
-  sorry
+    unfold Injective at * 
+    intro x y h -- The goal is to show P-> Q where P =: f x = f y and Q =: x = y
+    -- by intro h we say assume we have P, then we need to show Q
+    specialize hf x y 
+    specialize hg (f x) (f y) 
+    apply hf -- this asks me to now sow that f x = f y  
+    apply hg  -- this asks me to show g (f x) = g (f y)
+    exact h  -- this is my P
   }
 
 
@@ -307,7 +365,10 @@ Furthermore, we can decompose conjunction and equivalences.
 -/
 
 example (p q r s : Prop) (h : p → r) (h' : q → s) : p ∧ q → r ∧ s := by {
-  sorry
+  intro h2 
+  constructor
+  apply h h2.1 
+  apply h' h2.2 
   }
 
 end Real

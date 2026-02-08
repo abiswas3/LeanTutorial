@@ -49,7 +49,7 @@ your proof is finished.
 -/
 
 example (a b : ℝ) : (a+b)^2 = a^2 + 2*a*b + b^2 := by {
-  sorry
+  ring  
   }
 
 /- In the first example above, take a closer look at where Lean displays parentheses.
@@ -99,7 +99,11 @@ but it doesn't use the assumptions `h` and `h'`
 -/
 
 example (a b c d : ℝ) (h : b = d + d) (h' : a = b + c) : a + b = c + 4 * d := by {
-  sorry
+  calc a + b = b + c + b := by congr; 
+      _      = 2*b + c   := by ring
+      _      = 2*(d + d) + c := by congr; 
+      _      = 4*d + c       := by ring 
+      _      = c + 4*d       := by ring 
   }
 
 /- ## Rewriting with a lemma
@@ -111,10 +115,19 @@ it doesn't know how to work with exponentiation.
 For the following lemma, we will rewrite with the lemma
 `exp_add x y` twice, which is a proof that `exp(x+y) = exp(x) * exp(y)`.
 -/
+-- In this example we start by identifying the LHS of exp_add in the goal
+-- and simplifying
 example (a b c : ℝ) : exp (a + b + c) = exp a * exp b * exp c := by {
   rw [exp_add (a + b) c]
   rw [exp_add a b]
   }
+
+-- Alternatively, we can also start by simplifying the RHS 
+example (a b c : ℝ ) : exp (a + b +c) = exp a * exp b * exp c := by {
+   -- The RHS is already in the for (exp a * exp b) * exp c 
+   rw [<- exp_add a b]  -- matches against (exp a * exp b) and re-writes it to exp (a+b)
+   rw [<- exp_add (a+b) c] 
+}
 
 /-
 Note also that after the second `rw` the goal becomes
@@ -136,24 +149,29 @@ Recall that `a + b - c` means `(a + b) - c`.
 You can either use `ring` or rewrite with `mul_one x : x * 1 = x` to simplify the denominator on the
 right-hand side.
 -/
-
+-- DONE: 
 example (a b c : ℝ) : exp (a + b - c) = (exp a * exp b) / (exp c * exp 0) := by {
-  sorry
+    calc 
+      exp (a + b - c) = exp (a+b) / exp c := by rw [exp_sub]
+      _               = (exp a * exp b)/ exp c := by rw [exp_add] 
+      _               = (exp a * exp b)/ (exp c * 1) := by simp 
+      _               = (exp a * exp b)/ (exp c * exp 0) := by rw [<- exp_zero]
   }
 
 
 /- Prove the following equality just by using `rw`.
 The two lemmas below express the associativity and commutativity of multiplication. -/
+-- NOTE: (Ari) be explicit about arguments even if completely obvious. 
 
 #check (mul_assoc : ∀ a b c : ℝ, a * b * c = a * (b * c))
 #check (mul_comm : ∀ a b : ℝ, a * b = b * a)
 
+--    DONE:
+
 example (a b c : ℝ) : a * b * c = b * (a * c) := by {
-  sorry
+  rw [mul_comm a b]
+  rw [mul_assoc b a c]
   }
-
-
-
 
 /-
 In the following lemma the commutator of two elements of a group is defined as
@@ -172,8 +190,23 @@ variable {G : Type*} [Group G] (g h : G)
 #check mul_inv_rev g h
 #check inv_inv g
 
+-- NOTES
+-- commutatorElement_def g h : ⁅g, h⁆ = g * h * g⁻¹ * h⁻¹
+-- mul_inv_rev g h : (g * h)⁻¹ = h⁻¹ * g⁻¹
+-- WARNING: The key is that mul_inv_rev applies to the rightmost multiplication, so you need to group appropriately
+-- inv_inv g : g⁻¹⁻¹ = g
+
+-- TODO: 
 lemma inverse_of_a_commutator : ⁅g, h⁆⁻¹ = ⁅h, g⁆ := by {
-  sorry
+  rw [commutatorElement_def g h] -- this makes the goal 
+  -- ⊢ (g * h * g⁻¹ * h⁻¹)⁻¹ = ⁅h, g⁆ 
+  rw [commutatorElement_def h g]
+  -- NoW THE GOAL becomes 
+  -- |- (g * h * g⁻¹ * h⁻¹)⁻¹ = h * g * h⁻¹ * g⁻¹
+  calc (g * h * g⁻¹ * h⁻¹)⁻¹ = ((g *h) * (g⁻¹ * h⁻¹))⁻¹ := by ring1_nf 
+          _                 = (g⁻¹ * h⁻¹)⁻¹ * (g * h )⁻¹ := by rw [mul_inv_rev (g *h) (g⁻¹ * h⁻¹)]
+          _                 = (h⁻¹)⁻¹*(g⁻¹)⁻¹ * h⁻¹* g⁻¹ := by rw [mul_inv_rev (g⁻¹)  (h⁻¹)];  rw [mul_assoc]; rw [mul_inv_rev g h]
+          _                 = h*g * h⁻¹* g⁻¹ := by rw [inv_inv (h⁻¹), inv_inv (g⁻¹)] 
   }
 
 end
@@ -184,7 +217,7 @@ end
 Since equality is a symmetric relation, we can also replace the right-hand side of an
 equality by the left-hand side using `←` as in the following example.
 -/
-example (a b c : ℝ) (h : a = b + c) (h' : a + e = d + c) : b + c + e = d + c := by {
+example (a b c  d e : ℝ) (h : a = b + c) (h' : a + e = d + c) : b + c + e = d + c := by {
   rw [← h, h']
   }
 
