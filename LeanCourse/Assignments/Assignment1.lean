@@ -190,25 +190,31 @@ variable {G : Type*} [Group G] (g h : G)
 #check mul_inv_rev g h
 #check inv_inv g
 
+#check mul_assoc 
+
 -- NOTES
 -- commutatorElement_def g h : ⁅g, h⁆ = g * h * g⁻¹ * h⁻¹
 -- mul_inv_rev g h : (g * h)⁻¹ = h⁻¹ * g⁻¹
 -- WARNING: The key is that mul_inv_rev applies to the rightmost multiplication, so you need to group appropriately
 -- inv_inv g : g⁻¹⁻¹ = g
+-- mul_assoc.{u_1} {G : Type u_1} [Semigroup G] (a b c : G) : a * b * c = a * (b * c)
 
--- TODO: 
+--    DONE:
 lemma inverse_of_a_commutator : ⁅g, h⁆⁻¹ = ⁅h, g⁆ := by {
   rw [commutatorElement_def g h] -- this makes the goal 
   -- ⊢ (g * h * g⁻¹ * h⁻¹)⁻¹ = ⁅h, g⁆ 
   rw [commutatorElement_def h g]
   -- NoW THE GOAL becomes 
   -- |- (g * h * g⁻¹ * h⁻¹)⁻¹ = h * g * h⁻¹ * g⁻¹
-  calc (g * h * g⁻¹ * h⁻¹)⁻¹ = ((g *h) * (g⁻¹ * h⁻¹))⁻¹ := by ring1_nf 
+  calc (g * h * g⁻¹ * h⁻¹)⁻¹ = ((g *h) * (g⁻¹ * h⁻¹))⁻¹ := by group 
           _                 = (g⁻¹ * h⁻¹)⁻¹ * (g * h )⁻¹ := by rw [mul_inv_rev (g *h) (g⁻¹ * h⁻¹)]
-          _                 = (h⁻¹)⁻¹*(g⁻¹)⁻¹ * h⁻¹* g⁻¹ := by rw [mul_inv_rev (g⁻¹)  (h⁻¹)];  rw [mul_assoc]; rw [mul_inv_rev g h]
-          _                 = h*g * h⁻¹* g⁻¹ := by rw [inv_inv (h⁻¹), inv_inv (g⁻¹)] 
+            _               = (h⁻¹)⁻¹ * (g⁻¹)⁻¹ * (g * h)⁻¹ := by rw [mul_inv_rev g⁻¹ h⁻¹]
+            _                 = (h⁻¹)⁻¹ * (g⁻¹)⁻¹ * (h⁻¹ * g⁻¹) := by rw [mul_inv_rev g h]
+            _                 = (h⁻¹)⁻¹ * (g⁻¹)⁻¹ * h⁻¹ * g⁻¹ := by rw [← mul_assoc ((h⁻¹)⁻¹ * (g⁻¹)⁻¹) h⁻¹ g⁻¹]
+            _                 = h * g * h⁻¹ * g⁻¹ := by rw [inv_inv h, inv_inv g]
   }
 
+ 
 end
 
 /-
