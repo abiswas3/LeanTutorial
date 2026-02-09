@@ -236,11 +236,14 @@ Note this rewriting from right to left story is all about sides in the equality 
 *use*, not about sides in what you want to *prove*. The `rw [← h]` will replace the right-hand side
 by the left-hand side, so it will look for `b + c` in the current goal and replace it with `a`.
 -/
-
+-- DONE: 
 example (a b c d : ℝ) (h : a = b + b) (h' : b = c) (h'' : a = d) : b + c = d := by {
-  sorry
+  rw [<- h'']
+  rw [<- h']
+  rw [<- h]
   }
 
+-- DONE:
 example (a b c d : ℝ) (h : a*d - 1 = c) (h' : a*d = b) : c = b - 1 := by {
   sorry
   }
