@@ -203,10 +203,12 @@ lemma inverse_of_a_commutator : ⁅g, h⁆⁻¹ = ⁅h, g⁆ := by {
   rw [commutatorElement_def h g]
   -- NoW THE GOAL becomes 
   -- |- (g * h * g⁻¹ * h⁻¹)⁻¹ = h * g * h⁻¹ * g⁻¹
-  calc (g * h * g⁻¹ * h⁻¹)⁻¹ = ((g *h) * (g⁻¹ * h⁻¹))⁻¹ := by ring1_nf 
+  calc (g * h * g⁻¹ * h⁻¹)⁻¹ = ((g *h) * (g⁻¹ * h⁻¹))⁻¹ := by group 
           _                 = (g⁻¹ * h⁻¹)⁻¹ * (g * h )⁻¹ := by rw [mul_inv_rev (g *h) (g⁻¹ * h⁻¹)]
-          _                 = (h⁻¹)⁻¹*(g⁻¹)⁻¹ * h⁻¹* g⁻¹ := by rw [mul_inv_rev (g⁻¹)  (h⁻¹)];  rw [mul_assoc]; rw [mul_inv_rev g h]
-          _                 = h*g * h⁻¹* g⁻¹ := by rw [inv_inv (h⁻¹), inv_inv (g⁻¹)] 
+          _                 = (h⁻¹)⁻¹*(g⁻¹)⁻¹ * (g * h )⁻¹ := by rw [mul_inv_rev];
+          _                 = (h⁻¹)⁻¹*(g⁻¹)⁻¹ * (h⁻¹  * g⁻¹)  := by rw [mul_inv_rev g h];
+          _                 = (h⁻¹)⁻¹*(g⁻¹)⁻¹ * h⁻¹  * g⁻¹  := by apply?
+          _                 = h* g* h⁻¹  * g⁻¹  := by rw [inv_inv, inv_inv]
   }
 
 end
@@ -306,14 +308,18 @@ example (a b c d : ℝ) (h : c = d*a + b) (h' : b = a*d) : c = 2*a*d := by {
 /- Prove the following using a `calc` block. -/
 
 example (a b c d : ℝ) : a + b + c + d = d + (b + a) + c := by
-  sorry
+  sorry 
 
 /- Prove the following using a `calc` block. -/
 
 #check sub_self
 
 example (a b c d : ℝ) (h : c + a = b*a - d) (h' : d = a * b) : a + c = 0 := by {
-  sorry
+  calc a + c = c + a := by rw [add_comm a c]
+         _   = b*a - d := by rw [h]
+         _   = b*a - a*b := by rw[h'] -- these have been intro'd and only hold for intro'd a b c d 
+         _   = a*b - a*b := by rw[mul_comm b a] -- you can only provide args to lemmas that are universally quantified
+         _   = 0         := by rw[sub_self (a*b)]
   }
 
 
@@ -331,12 +337,24 @@ variable (R : Type*) [Ring R]
 #check (one_mul : ∀ a : R, 1 * a = a)
 #check (mul_add : ∀ a b c : R, a * (b + c) = a * b + a * c)
 #check (add_mul : ∀ a b c : R, (a + b) * c = a * c + b * c)
-
+#check (add_left_cancel)
 
 /- Use `calc` to prove the following from the axioms of rings, without using `ring`. -/
 
 example {a b c : R} (h : a + b = a + c) : b = c := by {
-  sorry
+  -- don't need h' just practicing creating a new hyp
+  have h' : b + a = a + c := by rw [add_comm b a]; exact h
+  /-
+  so when i write 
+  have h': (b+a = a +c) := by rw[add_comm b a] 
+  Now my sub goal is (b+a = a + c)
+  rw looks for  looks for b+a in the goal and 
+  tries to make it a+b, and then we get a + b = a + c,
+  but to get this hypotheis we need to justify this is true
+  so we use exactly h.
+  -/
+  -- a+b = a+c -> b=c
+  apply add_left_cancel h
   }
 
 end
@@ -373,11 +391,16 @@ variable (a b c x : ℝ)
 #check (add_zero a      : a + 0 = a)
 #check (zero_add a      : 0 + a = a)
 
-example : (a + b) * (a - b) = a^2 - b^2 := by sorry
+example : (a + b) * (a - b) = a^2 - b^2 := by 
+  rw [pow_two, pow_two] -- expands RHS 
+  rw [mul_sub] -- (a+b)*a - (a+b)*b 
+  rw [add_mul, add_mul] -- aa + ba - (ab + bb)
+  rw [<- sub_sub (a*a + b*a) (a *b) (b*b)] -- aa + ba -ab +bb 
+  rw [mul_comm b a ] -- aa + ab -ab + bb
+  rw [add_sub_cancel_right (a*a) (a*b)] -- matches left to right so it sees (aa + ab - ab) + bb
 
 
 -- Now redo it with `ring`.
 
-example : (a + b) * (a - b) = a^2 - b^2 := by sorry
-
+example : (a + b) * (a - b) = a^2 - b^2 := by ring 
 end
