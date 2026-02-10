@@ -149,7 +149,7 @@ Recall that `a + b - c` means `(a + b) - c`.
 You can either use `ring` or rewrite with `mul_one x : x * 1 = x` to simplify the denominator on the
 right-hand side.
 -/
--- DONE: 
+-- DONE:
 example (a b c : ℝ) : exp (a + b - c) = (exp a * exp b) / (exp c * exp 0) := by {
     calc 
       exp (a + b - c) = exp (a+b) / exp c := by rw [exp_sub]
