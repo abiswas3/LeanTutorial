@@ -236,13 +236,17 @@ Note this rewriting from right to left story is all about sides in the equality 
 *use*, not about sides in what you want to *prove*. The `rw [← h]` will replace the right-hand side
 by the left-hand side, so it will look for `b + c` in the current goal and replace it with `a`.
 -/
-
+-- DONE: 
 example (a b c d : ℝ) (h : a = b + b) (h' : b = c) (h'' : a = d) : b + c = d := by {
-  sorry
+  rw [<- h'']
+  rw [<- h']
+  rw [<- h]
   }
 
+-- DONE:
 example (a b c d : ℝ) (h : a*d - 1 = c) (h' : a*d = b) : c = b - 1 := by {
-  sorry
+   rw [<- h] -- ad -1 = b-1 is the goal now because
+   rw [h'] -- b - 1 = b-1
   }
 
 /- ## Rewriting in a local assumption
@@ -282,13 +286,14 @@ example (a b c d : ℝ) (h : c = b*a - d) (h' : d = a*b) : c = 0 := by {
 Let's do some exercises using `calc`. Feel free to use `ring` in some steps.
 -/
 
+-- DONE: 
 example (a b c : ℝ) (h : a = b + c) : exp (2 * a) = (exp b) ^ 2 * (exp c) ^ 2 := by {
   calc
-    exp (2 * a) = exp (2 * (b + c))                 := by sorry
-              _ = exp ((b + b) + (c + c))           := by sorry
-              _ = exp (b + b) * exp (c + c)         := by sorry
-              _ = (exp b * exp b) * (exp c * exp c) := by sorry
-              _ = (exp b) ^ 2 * (exp c)^2           := by sorry
+    exp (2 * a) = exp (2 * (b + c))                 := by congr;
+              _ = exp ((b + b) + (c + c))           := by ring 
+              _ = exp (b + b) * exp (c + c)         := by exact exp_add (b+b) (c+c) 
+              _ = (exp b * exp b) * (exp c * exp c) := by congr; exact exp_add b b; exact exp_add c c 
+              _ = (exp b) ^ 2 * (exp c)^2           := by ring 
   }
 
 /-
@@ -304,15 +309,20 @@ Aligning the equal signs and `:=` signs is not necessary but looks tidy.
 
 /- Prove the following using a `calc` block. -/
 example (a b c d : ℝ) (h : c = d*a + b) (h' : b = a*d) : c = 2*a*d := by {
-  sorry
+  calc c = d*a + b := by congr
+       _ = d*a + a*d := by congr
+       _ = 2*a*d := by ring 
   }
 
 
 
 /- Prove the following using a `calc` block. -/
-
+-- DONE: This was a good exercise to understand the how the matching works.
 example (a b c d : ℝ) : a + b + c + d = d + (b + a) + c := by
-  sorry 
+  calc a + b + c + d = d + ((a + b) + c) := by rw [add_comm (a + b + c) d] 
+              _      = d + ((b + a) + c) := by rw [add_comm  a b]
+              _      = (d + (b+a)) + c := by rw [<- add_assoc] 
+              _      = d + (b+a) +c := by congr 
 
 /- Prove the following using a `calc` block. -/
 
