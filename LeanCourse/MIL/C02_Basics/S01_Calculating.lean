@@ -171,7 +171,13 @@ example (a b c : ℕ) (h : a + b = c) : (a + b) * (a + b) = a * c + b * c := by
   nth_rw 2 [h]
   rw [add_mul]
 
+-- Converting goals
 example (x y : ℝ) (h: x^2 = y^2) : x^4 = y^4 := by {
-  have h3: ∀x: ℝ, x ^ 4 = (x ^ 2) ^ 2 := by ring  -- create an intermeidate result
-  rw [h3] 
+  -- convert the goal to  (x ^ 2) ^ 2 = y ^ 4
+  -- this will only be possible if (x^4 = (x^2)^2 
+  -- so we need a proof of that 
+  convert_to (x ^ 2) ^ 2 = y ^ 4
+  . ring 
+  rw [h] -- this will replace x² to y²  |- (y^2)^2 = y^4
+  ring 
 }
