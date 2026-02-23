@@ -124,7 +124,8 @@ example (p q r : Prop) (hq : p → p → q) (hr : q → r) : p → r := by {
 -/
 
 example (n : ℕ) (h : n ≤ 5) : n ≤ 5 := by
-  apply le_of_lt
+  --apply le_of_lt
+  sorry 
   -- dead end
 
 

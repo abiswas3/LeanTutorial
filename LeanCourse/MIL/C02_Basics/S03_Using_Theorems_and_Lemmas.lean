@@ -19,12 +19,13 @@ variable (h : a ≤ b) (h' : b ≤ c)
 end
 
 example (x y z : ℝ) (h₀ : x ≤ y) (h₁ : y ≤ z) : x ≤ z := by
-  apply le_trans
+  apply le_trans -- creates two sub goals y ?b ≤ z and a ≤ ?b
   · apply h₀
   · apply h₁
 
 example (x y z : ℝ) (h₀ : x ≤ y) (h₁ : y ≤ z) : x ≤ z := by
-  apply le_trans h₀
+  apply le_trans 
+  exact h₀
   apply h₁
 
 example (x y z : ℝ) (h₀ : x ≤ y) (h₁ : y ≤ z) : x ≤ z :=
@@ -43,9 +44,18 @@ example (x : ℝ) : x ≤ x :=
 #check (lt_trans : a < b → b < c → a < c)
 
 -- Try this.
-example (h₀ : a ≤ b) (h₁ : b < c) (h₂ : c ≤ d) (h₃ : d < e) : a < e := by
-  sorry
+-- a ≤ b => b < c => a < c 
+example (h₀ : a ≤ b) (h₁ : b < c) (h₂ : c ≤ d) (h₃ : d < e) : a < e := by{ 
+ apply lt_of_le_of_lt
+ exact h₀ 
+ apply lt_of_lt_of_le
+ exact h₁
+ apply le_trans
+ exact h₂ 
+ exact le_of_lt h₃ 
+}
 
+-- alternatlively we can do this
 example (h₀ : a ≤ b) (h₁ : b < c) (h₂ : c ≤ d) (h₃ : d < e) : a < e := by
   linarith
 
@@ -86,21 +96,30 @@ example (h₀ : a ≤ b) (h₁ : c < d) : a + exp c + e < b + exp d + e := by
     apply exp_lt_exp.mpr h₁
   apply le_refl
 
-example (h₀ : d ≤ e) : c + exp (a + d) ≤ c + exp (a + e) := by sorry
+example (h₀ : d ≤ e) : c + exp (a + d) ≤ c + exp (a + e) := by {
+  apply add_le_add_left  -- thism will make exp (a + d) <= exp (a+e)
+  rw [exp_le_exp] -- this will change it to (a + d) <= a + e 
+  gcongr -- this will close it
+}
 
 example : (0 : ℝ) < 1 := by norm_num
 
+-- #check (add_pos_of_pos_of_nonneg : 0 < a → 0 ≤ b → 0 < a + b)
+-- #check (exp_pos : ∀ a, 0 < exp a)
 example (h : a ≤ b) : log (1 + exp a) ≤ log (1 + exp b) := by
-  have h₀ : 0 < 1 + exp a := by sorry
+  have h₀ : 0 < 1 + exp a := by exact add_pos_of_pos_of_nonneg one_pos (exp_pos a).le
   apply log_le_log h₀
-  sorry
+  apply add_le_add_left 
+  rw [exp_le_exp]
+  exact h 
 
 example : 0 ≤ a ^ 2 := by
   -- apply?
   exact sq_nonneg a
 
 example (h : a ≤ b) : c - exp b ≤ c - exp a := by
-  sorry
+  gcongr
+
 
 example : 2 * a * b ≤ a ^ 2 + b ^ 2 := by
   have h : 0 ≤ a ^ 2 - 2 * a * b + b ^ 2
@@ -121,6 +140,9 @@ example : 2 * a * b ≤ a ^ 2 + b ^ 2 := by
   linarith
 
 example : |a * b| ≤ (a ^ 2 + b ^ 2) / 2 := by
-  sorry
+  apply abs_le.mpr
+  constructor
+  . nlinarith [sq_nonneg (a + b)] 
+  . nlinarith [sq_nonneg (a - b)] 
 
 #check abs_le'.mpr
