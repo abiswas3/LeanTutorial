@@ -20,22 +20,60 @@ open Real
 /-! # Exercises to practice. -/
 
 example {a b : ℝ} (h1 : a + 2 * b = 4) (h2 : a - b = 1) : a = 2 := by {
-  sorry
+  linarith
+}
+-- Doing it the long way
+-- NOTE: Found this hard to do wihout linarith
+example {a b : ℝ} (h1 : a + 2 * b = 4) (h2 : a - b = 1) : a = 2 := by {
+    have h3 : a = 1 + b := sub_eq_iff_eq_add.mp h2
+    have h4 : (3 : ℝ) * b = 3 :=
+      calc (3 : ℝ) * b = (a + 2 * b) - (a - b) := by ring
+                     _ = 4 - 1                  := by rw [h1, h2]
+                     _ = 3                      := by ring
+    have h5 : b = 1 := by {
+      have hne : (3 : ℝ) ≠ 0 := by norm_num
+      have h6 : (3 : ℝ) * b = 3 * 1 := by {
+        -- the rw is matching the RHS not the LHS!!!!
+        rw [ mul_one] -- goal changes from  3 * b = 3 * 1 to 3*b = 3
+        exact h4
+      }
+      exact mul_left_cancel₀ hne h6
+    }
+    calc a = 1 + b := h3
+         _ = 1 + 1 := by rw [h5]
+         _ = 2     := by ring
   }
 
+-- NOTE: Linarith does not work here as things are not so linear. 
 example {u v : ℝ} (h1 : u + 1 = v) : u ^ 2 + 3 * u + 1 = v ^ 2 + v - 1 := by {
-  sorry
+  have h3 : u = v - 1 := by exact eq_sub_of_add_eq h1
+  calc 
+    u ^ 2 + 3 * u + 1 = (v-1) ^ 2 + 3 * (v-1) + 1  := by rw [h3] 
+   _                  = v^2 + v - 1:= by ring  
   }
 
 example (a b c x y : ℝ) (h : a ≤ b) (h2 : b < c) (h3 : x ≤ y) :
     a + exp x ≤ c + exp (y + 2) := by {
-  sorry
-  }
+    have h4: a ≤  c := by {
+      calc a ≤ b := by exact h
+           _ ≤  c := by exact h2.le
+    }
+    have h5: x ≤ y + 2 := by {
+      calc x ≤ y := by exact h3
+           _  ≤ y + 2 := by linarith
+    }
+    -- this will be the goal
+    gcongr
+}
 
 /-- Prove the following using `linarith`.
 Note that `linarith` cannot deal with implication or if and only if statements. -/
-example (a b c : ℝ) : a + b ≤ c ↔ a ≤ c - b := by {
-  sorry
+example (a b c : ℝ) : a + b ≤ c ↔ a ≤ c - b := by { 
+  constructor
+  . intro h 
+    linarith 
+  . intro 
+    linarith 
   }
 
 /- Note: for purely numerical problems, you can use `norm_num`
@@ -66,21 +104,24 @@ When the pattern contains `?_`, it creates a subgoal with the corresponding term
 on each side of the inequality.
 For `congr` you can also do this using the tactic `congrm`. -/
 example {a₁ a₂ b₁ b₂ c₁ c₂ : ℝ} (hab : a₁ + a₂ = b₁ + b₂) (hbc : b₁ + b₂ ≤ c₁ + c₂) :
-    a₁ + a₂ + 1 ≤ c₁ + c₂ + 1 := by
-  calc a₁ + a₂ + 1 = b₁ + b₂ + 1 := by congrm ?_ + 1; exact hab
-    _ ≤ c₁ + c₂ + 1 := by gcongr ?_ + 1 -- gcongr automatically applies `hbc`.
+    a₁ + a₂ + 2 ≤ c₁ + c₂ + 2 := by
+  calc a₁ + a₂ + 2 = b₁ + b₂ + 2 := by congrm ?_ + 2; exact hab
+    _ ≤ c₁ + c₂ + 2 := by gcongr ?_ + 2 -- gcongr automatically applies `hbc`.
 
 
 example (x : ℝ) (hx : x = 3) : x ^ 2 + 3 * x - 5 = 13 := by
   rw [hx]
-  norm_num
+  linarith -- norm_num also works 
 
+  -- sq_nonneg m : 0 ≤ m ^ 2
+  -- sub_le_self : 0 ≤ b → a - b ≤ a
 example {m n : ℤ} : n - m ^ 2 ≤ n + 3 := by {
-  sorry
+  calc n - m ^ 2 ≤ n     := by apply sub_le_self n (sq_nonneg m) -- proof of b >= 0 so forward proof
+               _ ≤ n + 3 := by linarith
   }
 
-example {a : ℝ} (h : ∀ b : ℝ, a ≥ -3 + 4 * b - b ^ 2) : a ≥ 1 := by {
-  sorry
+example {a : ℝ} (h : ∀ b : ℝ, a ≥ -3 + 4 * b - b ^ 2) : a ≥ 1 := by {   
+    sorry 
   }
 
 example {a₁ a₂ a₃ b₁ b₂ b₃ : ℝ} (h₁₂ : a₁ + a₂ + 1 ≤ b₁ + b₂) (h₃ : a₃ + 2 ≤ b₃) :
@@ -201,7 +242,6 @@ lemma exercise_nondecreasing_add (f g : ℝ → ℝ) (hf : Nondecreasing f) (hg 
     Nondecreasing (f + g) := by {
   sorry
   }
-
 
 
 /-- Prove the following property of even. -/
