@@ -111,7 +111,10 @@ example (p q r s : Prop) (hq : p → s → q) (hr : q → r) : s → p → r := 
 
 /- We can also use `exact` or `refine` with more complicated proof terms. -/
 example (p q r : Prop) (hq : p → p → q) (hr : q → r) : p → r := by {
-  sorry
+  intro hp
+  specialize hq hp hp -- specialise goes forward. In Bhaviks notes he says to do it with apply at
+  specialize hr hq 
+  exact hr
   }
 
 
@@ -124,8 +127,7 @@ example (p q r : Prop) (hq : p → p → q) (hr : q → r) : p → r := by {
 -/
 
 example (n : ℕ) (h : n ≤ 5) : n ≤ 5 := by
-  --apply le_of_lt
-  sorry 
+  apply h 
   -- dead end
 
 
